@@ -4,6 +4,7 @@ import Layout from "../components/Layout";
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import EditModal from "../components/EditModal";
+import { motion } from "framer-motion";
 
 const Projects = () => {
   const { user } = useContext(AuthContext);
@@ -26,7 +27,6 @@ const Projects = () => {
 
   const createProject = async () => {
     if (!name.trim()) return;
-
     await API.post("/projects", { name });
     setName("");
     fetchProjects();
@@ -39,10 +39,7 @@ const Projects = () => {
     const resUser = await API.post("/auth/find-user", { email });
     const userId = resUser.data?.data?._id;
 
-    await API.post("/projects/add-member", {
-      projectId,
-      userId
-    });
+    await API.post("/projects/add-member", { projectId, userId });
 
     setEmailMap({ ...emailMap, [projectId]: "" });
     fetchProjects();
@@ -66,11 +63,7 @@ const Projects = () => {
 
   const saveEdit = async () => {
     if (!editValue.trim()) return;
-
-    await API.put(`/projects/${editId}`, {
-      name: editValue
-    });
-
+    await API.put(`/projects/${editId}`, { name: editValue });
     fetchProjects();
   };
 
@@ -80,25 +73,31 @@ const Projects = () => {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-semibold mb-6">Projects</h1>
+      {/* Header */}
+      <div className="mb-8 flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Projects</h1>
+      </div>
 
+      {/* CREATE PROJECT */}
       {user?.role === "admin" && (
-        <div className="bg-[#020617] border border-gray-800 p-5 rounded-xl mb-6">
-          <h2 className="text-sm text-gray-400 mb-3">
-            Create New Project
-          </h2>
+        <div className="mb-6 p-5 rounded-2xl bg-white/5 backdrop-blur border border-white/10">
+          <h2 className="text-sm text-gray-400 mb-3">Create New Project</h2>
 
           <div className="flex gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter project name"
-              className="flex-1 p-2 bg-gray-900 border border-gray-700 rounded text-sm"
+              placeholder="Enter project name..."
+              className="flex-1 px-3 py-2.5 rounded-lg
+                         bg-gray-900/80 border border-gray-700
+                         text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <button
               onClick={createProject}
-              className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded text-sm"
+              className="px-4 py-2 rounded-lg text-sm font-medium
+                         bg-gradient-to-r from-blue-500 to-purple-500
+                         hover:opacity-90 transition"
             >
               Create
             </button>
@@ -106,69 +105,86 @@ const Projects = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* PROJECT LIST */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {projects.map((p) => (
-          <div
+          <motion.div
             key={p._id}
-            className="bg-[#020617] border border-gray-800 p-4 rounded-xl relative"
+            whileHover={{ y: -5 }}
+            className="relative p-5 rounded-2xl 
+                       bg-white/5 backdrop-blur 
+                       border border-white/10 shadow-lg"
           >
-            <h2 className="font-semibold text-lg">{p.name}</h2>
+            {/* Title */}
+            <h2 className="font-semibold text-lg mb-2">{p.name}</h2>
 
+            {/* Actions */}
             {user?.role === "admin" && (
-              <div className="absolute top-3 right-3 flex gap-3">
+              <div className="absolute top-4 right-4 flex gap-3 text-xs">
                 <button
                   onClick={() => openEditModal(p._id, p.name)}
-                  className="text-blue-400 text-xs"
+                  className="text-blue-400 hover:text-blue-300"
                 >
                   Edit
                 </button>
 
                 <button
                   onClick={() => openDeleteModal(p._id)}
-                  className="text-red-400 text-xs"
+                  className="text-red-400 hover:text-red-300"
                 >
                   Delete
                 </button>
               </div>
             )}
 
-            <div className="mt-3 text-sm text-gray-400">
-              Members:
-              <ul className="mt-1 text-xs">
+            {/* Members */}
+            <div className="text-sm text-gray-400 mt-2">
+              Members
+              <div className="flex flex-wrap gap-2 mt-2">
                 {p.members?.map((m) => (
-                  <li key={m._id}>
-                    • {m.name}
-                  </li>
+                  <span
+                    key={m._id}
+                    className="px-2 py-1 text-xs rounded-full
+                               bg-white/10 border border-white/10"
+                  >
+                    {m.name}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
 
+            {/* Add Member */}
             {user?.role === "admin" && (
               <div className="mt-4 flex gap-2">
                 <input
-                  placeholder="Enter email"
+                  placeholder="Enter email..."
                   value={emailMap[p._id] || ""}
                   onChange={(e) =>
                     setEmailMap({
                       ...emailMap,
-                      [p._id]: e.target.value
+                      [p._id]: e.target.value,
                     })
                   }
-                  className="flex-1 p-2 bg-gray-900 border border-gray-700 rounded text-sm"
+                  className="flex-1 px-2 py-2 rounded-lg
+                             bg-gray-900/80 border border-gray-700
+                             text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
 
                 <button
                   onClick={() => addMember(p._id)}
-                  className="bg-green-500 px-3 rounded text-sm"
+                  className="px-3 rounded-lg text-xs font-medium
+                             bg-green-500/20 text-green-400 border border-green-500/30
+                             hover:bg-green-500/30 transition"
                 >
                   Add
                 </button>
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
 
+      {/* MODALS */}
       <ConfirmModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
